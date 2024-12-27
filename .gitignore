@@ -1,0 +1,66 @@
+# Flutter-specific
+.dart_tool/
+.flutter-plugins
+.flutter-plugins-dependencies
+.package
+.packages
+.idea/
+.vscode/
+build/
+pubspec.lock
+.flutter-versions
+.flutter-version
+.melos/
+
+# Android-specific
+android/.gradle/
+android/app/build/
+android/local.properties
+android/.idea/
+android/captures/
+android/**/gradle-wrapper.jar
+
+# iOS-specific
+ios/Flutter/Flutter.framework
+ios/Flutter/Flutter.podspec
+ios/Runner.xcworkspace/
+ios/Pods/
+ios/build/
+ios/DerivedData/
+ios/.symlinks/
+ios/*.xcuserdatad/
+ios/*.xcuserdata/
+*.xcworkspace
+!default.xcworkspace
+
+# macOS-specific
+macos/Flutter/ephemeral/
+macos/Pods/
+macos/Flutter/Flutter.podspec
+macos/.symlinks/
+macos/build/
+macos/*.xcuserdatad/
+macos/*.xcuserdata/
+
+# Web-specific
+web/.dart_tool/
+web/.dart_tool/
+
+# Linux-specific
+linux/flutter/ephemeral/
+linux/flutter/generated_plugin_registrant.cc
+linux/flutter/generated_plugin_registrant.h
+linux/build/
+
+# Windows-specific
+windows/flutter/ephemeral/
+windows/flutter/generated_plugin_registrant.cc
+windows/flutter/generated_plugin_registrant.h
+windows/build/
+windows/*.vcxproj.user
+
+# General
+.DS_Store
+*.log
+*.swp
+*.lock
