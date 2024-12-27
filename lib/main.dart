@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'dart:math';
+import 'package:flutter/services.dart';
 
 void main() {
   runApp(const MyApp());
@@ -48,16 +50,59 @@ class _HomeViewState extends State<HomeView> {
     {'name': 'Facebook', 'password': '******', 'dateAdded': '2023-12-22'},
   ];
 
+  final int passwordLength = 12;
+
   void _addAccount() {
     // Navigate to Add Account screen
     // TODO: Implement navigation to View 3
     print("Add Account button pressed");
   }
 
+  String _generateRandomPassword(int length) {
+    const chars =
+        "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#\$%^&*()_+";
+    Random random = Random();
+    return List.generate(length, (index) => chars[random.nextInt(chars.length)])
+        .join();
+  }
+
   void _generatePassword() {
-    // Open password generator popup
-    // TODO: Implement password generator popup
-    print("Generate Password button pressed");
+    final password = _generateRandomPassword(passwordLength);
+    showDialog(
+        context: context,
+        builder: (contentx) {
+          return AlertDialog(
+              title: Text('Generated Password'),
+              content: Stack(
+                children: [
+                  // the password displayed for selection
+                  SelectableText(
+                    password,
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.blue,
+                      decoration: TextDecoration.underline,
+                    ),
+                  ),
+                  // invisiable overlay
+                  Positioned.fill(child: GestureDetector(
+                    onTap: () {
+                      Clipboard.setData(ClipboardData(text: password));
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                            content: Text('Passowrd copied to clipboard!')),
+                      );
+                    },
+                  )),
+                ],
+              ),
+              actions: [
+                TextButton(
+                    onPressed: () => Navigator.pop(context),
+                    child: Text('Close'))
+              ]);
+        });
   }
 
   void _showAccountDetails(Map<String, String> account) {
