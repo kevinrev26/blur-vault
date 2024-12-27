@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'dart:math';
 import 'package:flutter/services.dart';
+// For the future, adjust the path if the file is in subfolders
+import 'account_popup.dart';
 
 void main() {
   runApp(const MyApp());
@@ -53,9 +55,19 @@ class _HomeViewState extends State<HomeView> {
   final int passwordLength = 12;
 
   void _addAccount() {
-    // Navigate to Add Account screen
-    // TODO: Implement navigation to View 3
-    print("Add Account button pressed");
+    showDialog(
+        context: context,
+        builder: (context) {
+          return AccountPopup(onSave: (name, password) {
+            setState(() {
+              accounts.add({
+                'name': name,
+                'password': password,
+                'dateAdded': DateTime.now().toString()
+              });
+            });
+          });
+        });
   }
 
   String _generateRandomPassword(int length) {
@@ -109,45 +121,15 @@ class _HomeViewState extends State<HomeView> {
     showDialog(
       context: context,
       builder: (context) {
-        return AlertDialog(
-          title: Text(account['name']!),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Text('Date Added: ${account['dateAdded']}'),
-              const SizedBox(height: 10),
-              GestureDetector(
-                onTap: () {
-                  setState(() {
-                    account['password'] =
-                        'actual_password'; // Replace with actual password
-                  });
-                },
-                child: Text(
-                  account['password']!,
-                  style: TextStyle(
-                    fontSize: 18,
-                    color: Colors.blue,
-                    decoration: TextDecoration.underline,
-                  ),
-                ),
-              ),
-              const SizedBox(height: 10),
-              ElevatedButton(
-                onPressed: () {
-                  // TODO: Navigate to edit screen
-                  print("Edit Account button pressed");
-                },
-                child: Text('Edit'),
-              )
-            ],
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: Text('Close'),
-            ),
-          ],
+        return AccountPopup(
+          initialName: account['name'],
+          initialPassword: account['password'],
+          onSave: (name, password) {
+            setState(() {
+              account['name'] = name;
+              account['password'] = password;
+            });
+          },
         );
       },
     );
