@@ -3,6 +3,8 @@ import 'dart:math';
 import 'package:flutter/services.dart';
 // For the future, adjust the path if the file is in subfolders
 import 'account_popup.dart';
+import './utils/database_heper.dart';
+import './models/account.dart';
 
 void main() {
   runApp(const MyApp());
@@ -15,7 +17,7 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Flutter Demo',
+      title: 'Blur Vault',
       theme: ThemeData(
         // This is the theme of your application.
         //
@@ -46,30 +48,28 @@ class HomeView extends StatefulWidget {
 }
 
 class _HomeViewState extends State<HomeView> {
-  // Sample list of accounts (replace with your data source)
-  List<Map<String, String>> accounts = [
-    {'name': 'Google', 'password': '******', 'dateAdded': '2023-12-20'},
-    {'name': 'Facebook', 'password': '******', 'dateAdded': '2023-12-22'},
-  ];
+  late Future<List<Account>> _accountsFuture;
 
   final int passwordLength = 12;
 
-  void _addAccount() {
-    showDialog(
-        context: context,
-        builder: (context) {
-          return AccountPopup(onSave: (name, password) {
-            setState(() {
-              accounts.add({
-                'name': name,
-                'password': password,
-                'dateAdded': DateTime.now().toString()
-              });
-            });
-          });
-        });
+  @override
+  void initState() {
+    super.initState();
+    _loadAccounts();
   }
 
+  void _loadAccounts() {
+    _accountsFuture =
+        DatabaseHelper().getAccounts(); // Lazy initialization happens here
+  }
+
+  void _refreshAccounts() {
+    setState(() {
+      _loadAccounts(); // Reload accounts when needed
+    });
+  }
+
+  //TODO: Move this to a centric ina specific folder.
   String _generateRandomPassword(int length) {
     const chars =
         "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#\$%^&*()_+";
@@ -91,10 +91,8 @@ class _HomeViewState extends State<HomeView> {
                   SelectableText(
                     password,
                     style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
+                      fontSize: 16,
                       color: Colors.blue,
-                      decoration: TextDecoration.underline,
                     ),
                   ),
                   // invisiable overlay
@@ -103,6 +101,7 @@ class _HomeViewState extends State<HomeView> {
                       Clipboard.setData(ClipboardData(text: password));
                       ScaffoldMessenger.of(context).showSnackBar(
                         SnackBar(
+                            //TODO: Implement localization
                             content: Text('Passowrd copied to clipboard!')),
                       );
                     },
@@ -117,25 +116,6 @@ class _HomeViewState extends State<HomeView> {
         });
   }
 
-  void _showAccountDetails(Map<String, String> account) {
-    showDialog(
-      context: context,
-      builder: (context) {
-        return AccountPopup(
-          initialName: account['name'],
-          initialPassword: account['password'],
-          onSave: (name, password) {
-            setState(() {
-              account['name'] = name;
-              account['password'] = password;
-            });
-          },
-        );
-      },
-    );
-  }
-
-  @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
@@ -143,25 +123,76 @@ class _HomeViewState extends State<HomeView> {
         actions: [
           IconButton(
             icon: Icon(Icons.add),
-            onPressed: _addAccount,
+            onPressed: () {
+              _showAccountPopup();
+            },
           ),
-          IconButton(
-            icon: Icon(Icons.key),
-            onPressed: _generatePassword,
-          ),
+          IconButton(onPressed: _generatePassword, icon: Icon(Icons.vpn_key))
         ],
       ),
-      body: ListView.builder(
-        itemCount: accounts.length,
-        itemBuilder: (context, index) {
-          final account = accounts[index];
-          return ListTile(
-            title: Text(account['name']!),
-            subtitle: Text('Added: ${account['dateAdded']}'),
-            onTap: () => _showAccountDetails(account),
+      body: FutureBuilder<List<Account>>(
+        future: _accountsFuture,
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return Center(child: CircularProgressIndicator());
+          } else if (snapshot.hasError) {
+            return Center(
+                child: Text('Error loading accounts: ${snapshot.error}'));
+          } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
+            return Center(child: Text('No accounts found.'));
+          }
+
+          final accounts = snapshot.data!;
+          return ListView.builder(
+            itemCount: accounts.length,
+            itemBuilder: (context, index) {
+              final account = accounts[index];
+              return ListTile(
+                title: Text(account.name),
+                subtitle: Text(account.dateAdded),
+                onTap: () {
+                  _showAccountPopup(account: account);
+                },
+              );
+            },
           );
         },
       ),
+    );
+  }
+
+  void _showAccountPopup({Account? account}) {
+    showDialog(
+      context: context,
+      builder: (context) {
+        return AccountPopup(
+          initialName: account?.name,
+          initialPassword: account?.password,
+          onSave: (name, password) async {
+            if (account == null) {
+              // Add new account
+              await DatabaseHelper().insertAccount(
+                Account(
+                  name: name,
+                  password: password,
+                  dateAdded: DateTime.now().toIso8601String(),
+                ),
+              );
+            } else {
+              // Update existing account
+              await DatabaseHelper().updateAccount(
+                Account(
+                  id: account.id,
+                  name: name,
+                  password: password,
+                  dateAdded: account.dateAdded, // Preserve original date
+                ),
+              );
+            }
+            _refreshAccounts();
+          },
+        );
+      },
     );
   }
 }
