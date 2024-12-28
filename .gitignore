@@ -64,3 +64,4 @@ windows/*.vcxproj.user
 *.log
 *.swp
 *.lock
+.secrets
